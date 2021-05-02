@@ -1,0 +1,60 @@
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include <set>
+#include <tuple>
+
+struct road {
+    int v = 0, time = 0, weight = 0;
+
+    road(int _v, int _time, int _weight) {
+        v = _v;
+        time = _time;
+        weight = _weight;
+    }
+
+    bool operator<(const road &a) const {
+        return std::tie(weight, time, v) < std::tie(a.weight, a.time, a.v);
+    }
+};
+
+bool dijkstra(int mid, const std::vector<std::vector<road>> &g) {
+    std::set<std::pair<int, int>> q;
+    std::vector<int> dist(g.size(), 2e9);
+    dist[1] = 0;
+    q.insert({dist[1], 1});
+    while (!q.empty()) {
+        int v = q.begin()->second;
+        q.erase(q.begin());
+        for (const auto&[u, time, weight] : g[v]) {
+            if ((weight - 3000000) / 100 >= mid && dist[v] + time < dist[u]) {
+                q.erase({dist[u], u});
+                dist[u] = dist[v] + time;
+                q.insert({dist[u], u});
+            }
+        }
+    }
+    return dist.back() <= 1440;
+}
+
+int main() {
+    std::size_t n, m;
+    std::cin >> n >> m;
+    std::vector<std::vector<road>> g(n + 1);
+    for (size_t i = 0; i < m; ++i) {
+        int u, v, time, weight;
+        std::cin >> u >> v >> time >> weight;
+        g[u].push_back(road{v, time, weight});
+        g[v].push_back(road{u, time, weight});
+    }
+    int l = 0, r = 10000001;
+    while (r - l > 1) {
+        m = (r + l) / 2;
+        if (dijkstra(m, g)) {
+            l = m;
+        } else {
+            r = m;
+        }
+    }
+    std::cout << l;
+}
