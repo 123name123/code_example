@@ -1,0 +1,104 @@
+#include <iostream>
+
+template<typename T>
+class SharedPtr {
+private:
+    T *data = nullptr;
+    size_t *cnt = nullptr;
+
+public:
+    void release() {
+        if (cnt) {
+            if (*cnt == 1) {
+                delete cnt;
+                delete data;
+            } else {
+                --*cnt;
+            }
+        }
+        cnt = nullptr;
+        data = nullptr;
+    }
+
+    SharedPtr() = default;
+
+    SharedPtr(T *ptr) : data(ptr), cnt(new size_t(1)) {}
+
+    SharedPtr(const SharedPtr &other) : data(other.data), cnt(other.cnt) {
+        if (cnt) {
+            ++*cnt;
+        }
+    }
+
+    SharedPtr(SharedPtr &&other) : data(other.data), cnt(other.cnt) {
+        other.data = nullptr;
+        other.cnt = nullptr;
+    }
+
+    SharedPtr &operator=(T *ptr) {
+        release();
+        data = ptr;
+        cnt = new size_t(1);
+    }
+
+    SharedPtr &operator=(const SharedPtr &other) {
+        if (&other == this) {
+            return *this;
+        }
+        release();
+
+        cnt = other.cnt;
+        data = other.data;
+        if (cnt) {
+            ++*cnt;
+        }
+        return *this;
+    }
+
+    SharedPtr &operator=(SharedPtr &&other) noexcept {
+        if (&other == this) {
+            return *this;
+        }
+        release();
+        cnt = other.cnt;
+        data = other.data;
+        other.cnt = nullptr;
+        other.data = nullptr;
+        return *this;
+    }
+
+    T &operator*() {
+        return *data;
+    }
+
+    const T &operator*() const {
+        return *data;
+    }
+
+    T *operator->() const {
+        return data;
+    }
+
+    void reset(T *ptr) {
+        release();
+        data = ptr;
+        cnt = new size_t(1);
+    }
+
+    void swap(SharedPtr &other) {
+        std::swap(other.data, data);
+        std::swap(other.cnt, cnt);
+    }
+
+    T *get() const {
+        return data;
+    }
+
+    explicit operator bool() const {
+        return data != nullptr;
+    }
+
+    ~SharedPtr() {
+        release();
+    }
+};
